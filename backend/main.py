@@ -64,6 +64,32 @@ def get_theses() -> list[Thesis]:
         theses = session.exec(select(Thesis)).all()
         return theses
 
+@app.get("/theses/{thesis_id}")
+def get_thesis(thesis_id: int) -> Thesis:
+    with Session(engine) as session:
+        thesis = session.get(Thesis, thesis_id)
+        if thesis is None:
+            raise fastapi.HTTPException(status_code=404, detail="Thesis not found")
+        return thesis
+
+@app.patch("/theses/{thesis_id}")
+def update_thesis(thesis_id: int, new_status: Status) -> Thesis:
+    with Session(engine) as session:
+        thesis = session.get(Thesis, thesis_id)
+        if thesis is None:
+            raise fastapi.HTTPException(status_code=404, detail="Thesis not found")
+        thesis.status = new_status
+        session.commit()
+        return thesis
+
+@app.delete("/theses/{thesis_id}", status_code=204)
+def delete_thesis(thesis_id: int) -> None:
+    with Session(engine) as session:
+        thesis = session.get(Thesis, thesis_id)
+        if thesis is None:
+            raise fastapi.HTTPException(status_code=404, detail="Thesis not found")
+        session.delete(thesis)
+        session.commit()
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
