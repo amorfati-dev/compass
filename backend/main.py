@@ -3,6 +3,7 @@ import fastapi
 from enum import Enum
 from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, create_engine, Session, select
+from fastapi.middleware.cors import CORSMiddleware
 
 class PositionType(str, Enum):
     ARISTOCRAT = "aristocrat"
@@ -34,6 +35,13 @@ class Thesis(ThesisCreate, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 app = fastapi.FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 sql_file_name = "compass.db"
 sqlite_url = f"sqlite:///{sql_file_name}"
 engine = create_engine(sqlite_url, echo=True)
