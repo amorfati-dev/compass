@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
+type Status = 'unreviewed' | 'thesis_valid' | 'watchout' | 'thesis_broken'
+
 function App() {
   const [theses, setTheses] = useState([])
   useEffect(() => {
@@ -35,10 +37,28 @@ function App() {
     })
   }
 
+  const handleUpdate = (id:number, newStatus:Status) => {
+    fetch(`http://localhost:8000/theses/${id}?new_status=${newStatus}`, {
+      method: 'PATCH',
+    })
+    .then(() => {
+      setTheses(theses.map((thesis) => thesis.id === id ? { ...thesis, status: newStatus } : thesis))
+    })
+  }
+
+  const handleDelete = (id:number) => {
+    fetch(`http://localhost:8000/theses/${id}`, {
+      method: 'DELETE'
+    })
+    .then(() => {
+      setTheses(theses.filter((thesis) => thesis.id !== id))
+    })
+  }
+
   return (
     <div>
       <h1>Compass AI</h1>
-      <p>Mein FIRE-Cockpit</p>
+      <p>My FIRE Cockpit</p>
       <input
         type="text"
         placeholder="Ticker Symbol"
@@ -80,7 +100,14 @@ function App() {
       <button onClick={handleSubmit}>Add Thesis</button>
       {theses.map((thesis) => (
         <div className="thesis-card" key={thesis.id}>
+          <button onClick={() => handleDelete(thesis.id)}>Delete</button>
           <div className="thesis-header">
+            <select value={thesis.status} onChange={(e) => handleUpdate(thesis.id, e.target.value as Status)}>
+              <option value="unreviewed">Unreviewed</option>
+              <option value="thesis_valid">Thesis Valid</option>
+              <option value="watchout">Watchout</option>
+              <option value="thesis_broken">Thesis Broken</option>
+            </select>
             <span className="thesis-ticker">{thesis.ticker}</span>
             <span className={`thesis-status status-${thesis.status}`}>{thesis.status}</span>
           </div>
