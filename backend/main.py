@@ -1,3 +1,4 @@
+from ctypes import POINTER
 import uvicorn
 import fastapi
 from enum import Enum
@@ -34,6 +35,19 @@ class Thesis(ThesisCreate, table=True):
     status: Status = Status.UNREVIEWED
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class PositionCreate(SQLModel):
+    broker: str
+    ticker: str
+    type: PositionType
+    name: str
+    number_of_shares: int
+    entry_price: float
+    expected_dividend_per_share: float
+
+class Position(PositionCreate, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    
 app = fastapi.FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -98,6 +112,21 @@ def delete_thesis(thesis_id: int) -> None:
             raise fastapi.HTTPException(status_code=404, detail="Thesis not found")
         session.delete(thesis)
         session.commit()
+
+@app.post("/positions")
+def create_position(position_data: PositionCreate) -> Position:
+    new_position = Position(**position_data.model_dump())
+    with Session(engine) as session:
+        session.add(new_position)
+        session.commit()
+        session.refresh(new_position)
+    return new_position
+
+@app.get("/positions")
+def get_positions() -> list[Position]:
+    with Session(engine) as session:
+        positions = session.exec(select(Position)).all()
+        return positions
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
