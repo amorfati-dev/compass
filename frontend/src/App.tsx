@@ -19,7 +19,11 @@ function App() {
     name: '',
     type: 'aristocrat',
     thesis: '',
-    kill_criterion: ''
+    kill_criterion: '',
+    broker: '',
+    number_of_shares: '',
+    entry_price: '',
+    expected_dividend_per_share: '',
   })
 
   const handleSubmit = () => {
@@ -28,12 +32,34 @@ function App() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(formData)
+      body: JSON.stringify({ticker: formData.ticker,
+        name: formData.name,
+        type: formData.type,
+        thesis: formData.thesis,
+        kill_criterion: formData.kill_criterion})
     })
       .then(response => response.json())
       .then((NewThesis) => {
         console.log(NewThesis)
         setTheses([...theses, NewThesis])
+      })
+    fetch('http://localhost:8000/positions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({broker: formData.broker,
+        ticker: formData.ticker,
+        type: formData.type,
+        name: formData.name,
+        number_of_shares: Number(formData.number_of_shares),
+        entry_price: Number(formData.entry_price),
+        expected_dividend_per_share: Number(formData.expected_dividend_per_share)})
+    })
+      .then(response => response.json())
+      .then((NewPosition) => {
+        console.log(NewPosition)
+        setPositions([...positions, NewPosition])
       })
   }
 
@@ -142,6 +168,32 @@ function App() {
         placeholder="Kill-Criterion"
         value={formData.kill_criterion}
         onChange={(e) => setFormData({ ...formData, kill_criterion: e.target.value })}
+      />
+      <input
+        type = "text"
+        placeholder="Broker"
+        value={formData.broker}
+        onChange={(e) => setFormData({ ...formData, broker: e.target.value })}
+      />
+      <input
+        type="number"
+        placeholder="Number of Shares"
+        value={formData.number_of_shares}
+        onChange={(e) => setFormData({ ...formData, number_of_shares: e.target.value })}
+      />
+      <input
+        type="number"
+        placeholder="Entry Price"
+        value={formData.entry_price}
+        step="0.01"
+        onChange={(e) => setFormData({ ...formData, entry_price: e.target.value })}
+      />
+      <input
+        type="number"
+        placeholder="Expected Dividend per Share"
+        value={formData.expected_dividend_per_share}
+        step="0.01"
+        onChange={(e) => setFormData({ ...formData, expected_dividend_per_share: e.target.value })}
       />
       <button onClick={handleSubmit}>Add Thesis</button>
       {theses.map((thesis) => (
