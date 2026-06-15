@@ -3,6 +3,21 @@ import './App.css'
 
 type Status = 'unreviewed' | 'thesis_valid' | 'watchout' | 'thesis_broken'
 
+  const emptyForm = {
+    ticker: '',
+    name: '',
+    type: 'aristocrat',
+    thesis: '',
+    kill_criterion: '',
+    broker: '',
+    number_of_shares: '',
+    entry_price: '',
+    expected_dividend_per_share: '',
+  }
+useState(() => {
+  return emptyForm
+})
+
 function App() {
   const [theses, setTheses] = useState([])
   useEffect(() => {
@@ -14,17 +29,7 @@ function App() {
       })
   }, [])
 
-  const [formData, setFormData] = useState({
-    ticker: '',
-    name: '',
-    type: 'aristocrat',
-    thesis: '',
-    kill_criterion: '',
-    broker: '',
-    number_of_shares: '',
-    entry_price: '',
-    expected_dividend_per_share: '',
-  })
+  const [formData, setFormData] = useState(emptyForm)
 
   const handleSubmit = () => {
     fetch('http://localhost:8000/theses', {
@@ -61,6 +66,7 @@ function App() {
         console.log(NewPosition)
         setPositions([...positions, NewPosition])
       })
+    setFormData(emptyForm())
   }
 
   const handleUpdate = (id: number, newStatus: Status) => {
