@@ -13,10 +13,7 @@ type Status = 'unreviewed' | 'thesis_valid' | 'watchout' | 'thesis_broken'
     number_of_shares: '',
     entry_price: '',
     expected_dividend_per_share: '',
-  }
-useState(() => {
-  return emptyForm
-})
+ };
 
 function App() {
   const [theses, setTheses] = useState([])
@@ -66,7 +63,7 @@ function App() {
         console.log(NewPosition)
         setPositions([...positions, NewPosition])
       })
-    setFormData(emptyForm())
+    setFormData(emptyForm);
   }
 
   const handleUpdate = (id: number, newStatus: Status) => {
@@ -202,7 +199,9 @@ function App() {
         onChange={(e) => setFormData({ ...formData, expected_dividend_per_share: e.target.value })}
       />
       <button onClick={handleSubmit}>Add Thesis</button>
-      {theses.map((thesis) => (
+      {theses.map((thesis) => {
+        const matchedPosition = positions.find((position) => position.ticker === thesis.ticker)
+        return (
         <div className="thesis-card" key={thesis.id}>
           <button onClick={() => handleDelete(thesis.id)}>Delete</button>
           <div className="thesis-header">
@@ -217,9 +216,10 @@ function App() {
           </div>
           <h3 className="thesis-name">{thesis.name}</h3>
           <p className="thesis-text">{thesis.thesis}</p>
+          <p>{matchedPosition?.number_of_shares} Stück bei {matchedPosition?.entry_price} €</p>
         </div>
-      ))}
-    </div>
+      )})}
+    </div>  
   )
 }
 
