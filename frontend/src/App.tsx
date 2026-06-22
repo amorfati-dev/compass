@@ -216,7 +216,9 @@ function App() {
           </div>
           <h3 className="thesis-name">{thesis.name}</h3>
           <p className="thesis-text">{thesis.thesis}</p>
-          <p>{matchedPosition?.number_of_shares} Stück bei {matchedPosition?.entry_price} €</p>
+          {matchedPosition && (
+            <p>{matchedPosition.number_of_shares} Stück bei {matchedPosition.entry_price} €</p>
+          )}
         </div>
       )})}
     </div>  
