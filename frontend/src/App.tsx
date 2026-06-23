@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
+import FireBar from './FireBar';
+import ThesisCard from './ThesisCard';
 
 type Status = 'unreviewed' | 'thesis_valid' | 'watchout' | 'thesis_broken'
 
@@ -105,35 +107,8 @@ function App() {
       <p>Erwartete Dividenden: {annualDividends.toFixed(2)} € / year</p>
       <p>Erwartete Dividenden: {monthlyDividends.toFixed(2)} € / months</p>
 
-      <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
-        <div style={{
-          background: '#1e2235',
-          borderRadius: '999px',
-          height: '36px',
-          overflow: 'hidden',
-          position: 'relative'
-        }}>
-          <div style={{
-            background: 'linear-gradient(90deg, #2f6f4f, #3d8b6d)',
-            width: `${progressPercent}%`,
-            height: '100%',
-            borderRadius: '999px',
-            transition: 'width 0.8s ease'
-          }} />
-          <span style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            fontWeight: 600,
-            fontSize: '0.9rem'
-          }}>
-            {monthlyDividends.toFixed(2)} € / 3.500 € ({progressPercent.toFixed(1)} %)
-          </span>
-        </div>
-      </div>
+      <FireBar monthlyDividends={monthlyDividends} progressPercent={progressPercent} />
+ 
       <input
         type="text"
         placeholder="Ticker Symbol"
@@ -202,27 +177,10 @@ function App() {
       {theses.map((thesis) => {
         const matchedPosition = positions.find((position) => position.ticker === thesis.ticker)
         return (
-        <div className="thesis-card" key={thesis.id}>
-          <button onClick={() => handleDelete(thesis.id)}>Delete</button>
-          <div className="thesis-header">
-            <select value={thesis.status} onChange={(e) => handleUpdate(thesis.id, e.target.value as Status)}>
-              <option value="unreviewed">Unreviewed</option>
-              <option value="thesis_valid">Thesis Valid</option>
-              <option value="watchout">Watchout</option>
-              <option value="thesis_broken">Thesis Broken</option>
-            </select>
-            <span className="thesis-ticker">{thesis.ticker}</span>
-            <span className={`thesis-status status-${thesis.status}`}>{thesis.status}</span>
-          </div>
-          <h3 className="thesis-name">{thesis.name}</h3>
-          <p className="thesis-text">{thesis.thesis}</p>
-          {matchedPosition && (
-            <p>{matchedPosition.number_of_shares} Stück bei {matchedPosition.entry_price} €</p>
-          )}
-        </div>
-      )})}
-    </div>  
-  )
-}
+        <ThesisCard key={thesis.id} thesis={thesis} matchedPosition={matchedPosition} handleUpdate={handleUpdate} handleDelete={handleDelete} />
+      )})}  
+    </div>
+    )
+  } 
 
 export default App;

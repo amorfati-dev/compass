@@ -1,4 +1,4 @@
-function FireBar() { monthlyDividends, progressPercent }: { monthlyDividends: number, progressPercent: number }) {
+function FireBar({ monthlyDividends, progressPercent }: { monthlyDividends: number, progressPercent: number }) {
     return ( 
         <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
         <div style={{
