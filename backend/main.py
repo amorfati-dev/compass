@@ -128,5 +128,13 @@ def get_positions() -> list[Position]:
         positions = session.exec(select(Position)).all()
         return positions
 
+@app.delete("/positions/{ticker}", status_code=204)
+def delete_position(ticker: str) -> None:
+    with Session(engine) as session:
+        positions = session.exec(select(Position).where(Position.ticker == ticker)).all()
+        for position in positions:
+            session.delete(position)
+        session.commit()
+        
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

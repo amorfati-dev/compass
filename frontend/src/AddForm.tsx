@@ -10,7 +10,9 @@ function AddForm({ formData, setFormData, handleSubmit }: {
     handleSubmit: () => void
   }) {
     return (
-      <>
+      <div className="add-form">
+        <h2 className="add-form-title">Neue These hinzufügen</h2>
+        <div className="add-form-grid">
        <input
         type="text"
         placeholder="Ticker Symbol"
@@ -75,8 +77,9 @@ function AddForm({ formData, setFormData, handleSubmit }: {
         step="0.01"
         onChange={(e) => setFormData({ ...formData, expected_dividend_per_share: e.target.value })}
       />
-      <button onClick={handleSubmit}>Add Thesis</button>      
-      </>
+        </div>
+        <button className="submit-btn" onClick={handleSubmit}>Add Thesis</button>
+      </div>
     )
   }
   export default AddForm

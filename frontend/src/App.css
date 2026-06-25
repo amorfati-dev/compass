@@ -1,10 +1,157 @@
+.app {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+/* ---------- Header / Cockpit ---------- */
+.app-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.app-header h1 {
+  margin: 24px 0 4px;
+}
+
+.subtitle {
+  color: var(--text);
+  font-size: 1rem;
+  margin-bottom: 24px;
+}
+
+.kpi-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.kpi {
+  background-color: #1a1a2e;
+  border: 1px solid #2a2a4a;
+  border-radius: 12px;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 200px;
+}
+
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #3d8b6d;
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ---------- Add form ---------- */
+.add-form {
+  background-color: #1a1a2e;
+  border: 1px solid #2a2a4a;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 32px 0;
+}
+
+.add-form-title {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+}
+
+.add-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 560px) {
+  .add-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* shared field styling */
+.add-form input,
+.add-form select,
+.status-select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #2a2a4a;
+  background-color: #12121f;
+  color: var(--text-h);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.add-form input::placeholder {
+  color: #6b6b85;
+}
+
+.add-form input:focus,
+.add-form select:focus,
+.status-select:focus {
+  border-color: #3d8b6d;
+}
+
+/* ---------- Buttons ---------- */
+.submit-btn {
+  margin-top: 16px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #2f6f4f, #3d8b6d);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.submit-btn:hover {
+  filter: brightness(1.1);
+}
+
+.delete-btn {
+  padding: 6px 12px;
+  border: 1px solid #4a2a35;
+  border-radius: 8px;
+  background-color: transparent;
+  color: #f87171;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.delete-btn:hover {
+  background-color: rgba(220, 38, 38, 0.12);
+}
+
+/* ---------- Thesis cards ---------- */
+.thesis-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .thesis-card {
   background-color: #1a1a2e;
   border: 1px solid #2a2a4a;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 20px;
-  margin: 16px auto;
-  max-width: 600px;
   text-align: left;
 }
 
@@ -12,17 +159,59 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 12px;
+}
+
+.thesis-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.thesis-ticker {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-h);
 }
 
 .thesis-status {
   padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
   font-weight: bold;
   text-transform: uppercase;
+  letter-spacing: 0.4px;
   color: white;
 }
 
+.thesis-name {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  color: var(--text-h);
+}
+
+.thesis-text {
+  margin: 0 0 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.thesis-position {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.thesis-footer {
+  border-top: 1px solid #2a2a4a;
+  padding-top: 12px;
+}
+
+.thesis-footer .status-select {
+  max-width: 220px;
+}
+
+/* ---------- Status colors ---------- */
 .status-thesis_valid {
   background-color: #16a34a;
 }
