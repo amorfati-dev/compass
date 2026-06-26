@@ -48,24 +48,28 @@ function App() {
         console.log(NewThesis)
         setTheses([...theses, NewThesis])
       })
-    fetch('http://localhost:8000/positions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({broker: formData.broker,
-        ticker: formData.ticker,
-        type: formData.type,
-        name: formData.name,
-        number_of_shares: Number(formData.number_of_shares),
-        entry_price: Number(formData.entry_price),
-        expected_dividend_per_share: Number(formData.expected_dividend_per_share)})
-    })
-      .then(response => response.json())
-      .then((NewPosition) => {
-        console.log(NewPosition)
-        setPositions([...positions, NewPosition])
+
+    if (formData.number_of_shares) {
+      fetch('http://localhost:8000/positions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({broker: formData.broker,
+          ticker: formData.ticker,
+          type: formData.type,
+          name: formData.name,
+          number_of_shares: Number(formData.number_of_shares),
+          entry_price: Number(formData.entry_price),
+          expected_dividend_per_share: Number(formData.expected_dividend_per_share)})
       })
+        .then(response => response.json())
+        .then((NewPosition) => {
+          console.log(NewPosition)
+          setPositions([...positions, NewPosition])
+        })
+    }
+
     setFormData(emptyForm);
   }
 
