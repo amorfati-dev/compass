@@ -1,10 +1,20 @@
-from ctypes import POINTER
 import uvicorn
 import fastapi
 from enum import Enum
 from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, create_engine, Session, select
 from fastapi.middleware.cors import CORSMiddleware
+import secrets, hashlib, base64
+from urllib.parse import urlencode
+from fastapi.responses import RedirectResponse
+
+
+PARQET_CLIENT_ID = "019f1299-7180-70e0-90fc-4812392dbe0e"
+PARQET_REDIRECT_URI = "http://localhost:8000/auth/parqet/callback"
+PARQET_AUTH_URL = "https://connect.parqet.com/oauth2/authorize"
+
+# --- transienter Stash: state -> verifier (Dev-Qualität) ---
+pending: dict[str, str] = {}
 
 class PositionType(str, Enum):
     ARISTOCRAT = "aristocrat"
@@ -48,6 +58,13 @@ class Position(PositionCreate, table=True):
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
+class ParqetToken(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    access_token: str
+    refresh_token: str | None = None
+    expires_at: datetime 
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 app = fastapi.FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -135,6 +152,34 @@ def delete_position(ticker: str) -> None:
         for position in positions:
             session.delete(position)
         session.commit()
+
+@app.get("/auth/parqet/login")
+def login_parqet():
+        # 1 · verifier: dein geheimes Passwort
+    verifier = secrets.token_urlsafe(32)
+
+    # 2 · challenge: der Fingerabdruck davon
+    digest = hashlib.sha256(verifier.encode()).digest()        # verifier -> bytes -> sha256 -> rohe hash-bytes
+    challenge = base64.urlsafe_b64encode(digest).decode().rstrip("=")  # bytes -> url-safe text, padding "=" weg
+
+    # 3 · state: zweiter Zufallsstring gegen CSRF
+    state = secrets.token_urlsafe(32)
+
+    # 4 · verifier wegstashen, auffindbar über state
+    pending[state] = verifier
+
+    # 5 · Authorize-URL bauen und Browser dorthin weiterleiten
+    params = {
+        "response_type": "code",
+        "client_id": PARQET_CLIENT_ID,
+        "redirect_uri": PARQET_REDIRECT_URI,
+        "scope": "portfolio:read",
+        "state": state,
+        "code_challenge": challenge,
+        "code_challenge_method": "S256",
+    }
+    return RedirectResponse(url=f"{PARQET_AUTH_URL}?{urlencode(params)}")
+
         
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
