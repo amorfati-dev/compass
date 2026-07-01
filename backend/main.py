@@ -1,17 +1,19 @@
 import uvicorn
 import fastapi
 from enum import Enum
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from sqlmodel import SQLModel, Field, create_engine, Session, select
 from fastapi.middleware.cors import CORSMiddleware
 import secrets, hashlib, base64
 from urllib.parse import urlencode
 from fastapi.responses import RedirectResponse
+import httpx
 
 
 PARQET_CLIENT_ID = "019f1299-7180-70e0-90fc-4812392dbe0e"
 PARQET_REDIRECT_URI = "http://localhost:8000/auth/parqet/callback"
 PARQET_AUTH_URL = "https://connect.parqet.com/oauth2/authorize"
+PARQET_TOKEN_URL = "https://connect.parqet.com/oauth2/token"
 
 # --- transienter Stash: state -> verifier (Dev-Qualität) ---
 pending: dict[str, str] = {}
@@ -79,6 +81,34 @@ engine = create_engine(sqlite_url, echo=True)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+
+def get_valid_token():
+    with Session(engine) as session:
+        parqet_token = session.exec(select(ParqetToken)).first()
+        if parqet_token is None:
+            raise fastapi.HTTPException(status_code=401, detail="No valid token found")
+
+        if parqet_token.expires_at < datetime.now(timezone.utc):
+            # --- Token abgelaufen → mit refresh_token erneuern ---
+            response = httpx.post(
+                PARQET_TOKEN_URL,
+                data={
+                    "grant_type": "refresh_token",
+                    "refresh_token": parqet_token.refresh_token,   # Schlüssel heißt refresh_token
+                    "client_id": PARQET_CLIENT_ID,
+                    # kein code_verifier, kein redirect_uri
+                },
+            )
+            response.raise_for_status()
+            tokens = response.json()
+
+            # --- die BESTEHENDE Zeile überschreiben (kein neues Objekt!) ---
+            parqet_token.access_token = tokens["access_token"]
+            parqet_token.refresh_token = tokens.get("refresh_token")
+            parqet_token.expires_at = datetime.now(timezone.utc) + timedelta(seconds=tokens["expires_in"])
+            session.commit()   # SQLModel erkennt: bekannte Zeile geändert → UPDATE
+
+        return parqet_token.access_token
 
 @app.on_event("startup")
 def on_startup():
@@ -179,6 +209,42 @@ def login_parqet():
         "code_challenge_method": "S256",
     }
     return RedirectResponse(url=f"{PARQET_AUTH_URL}?{urlencode(params)}")
+
+@app.get("/auth/parqet/callback")
+def callback_parqet(code: str, state: str):
+    if state not in pending:
+        raise fastapi.HTTPException(status_code=400, detail="Invalid state")
+    verifier = pending.pop(state)
+ 
+    # --- Job 3: Marke + verifier gegen Token tauschen (server-to-server) ---
+    response = httpx.post(
+        PARQET_TOKEN_URL,
+        data={                                    # data= → form-urlencoded (NICHT json=)
+            "grant_type": "authorization_code",
+            "code": code,
+            "code_verifier": verifier,            # jetzt kommt das Passwort raus
+            "client_id": PARQET_CLIENT_ID,
+            "redirect_uri": PARQET_REDIRECT_URI,  # byte-genau wie in /login
+        },
+    )
+    response.raise_for_status()                   # bei 4xx/5xx sofort Fehler werfen
+    tokens = response.json()                      # {"access_token":..., "refresh_token":..., "expires_in":...}
+
+    # --- expires_at ausrechnen: jetzt + Gültigkeitsdauer in Sekunden ---
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=tokens["expires_in"])
+
+    # --- in die DB speichern (dasselbe Muster wie bei Thesis) ---
+    with Session(engine) as session:
+        session.add(ParqetToken(
+            access_token=tokens["access_token"],
+            refresh_token=tokens.get("refresh_token"),   # .get() → None falls fehlt
+            expires_at=expires_at,
+        ))
+        session.commit()
+
+    return {"status": "connected"}
+
+
 
         
 if __name__ == "__main__":
