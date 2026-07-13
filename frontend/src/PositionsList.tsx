@@ -14,17 +14,20 @@ function PositionsList({ positions }: PositionsListProps) {
                     <th>Wert</th>
                     <th>Dividende (netto)</th>
                     <th>Rendite</th>
+                    <th>Yield on Cost</th>
                 </tr>
             </thead>
             <tbody>
                 {sorted.map((position) => {
                     const yieldPercent = position.current_value === 0 ? 0 :position.dividend_net / position.current_value * 100;
+                    const yieldOnCost = position.purchase_value === 0 ? 0 :position.dividend_net / position.purchase_value * 100;
                     return (
                         <tr key={position.isin}>
                             <td>{position.name}</td>
                             <td>{position.current_value.toFixed(2)} €</td>
                             <td>{position.dividend_net.toFixed(2)} €</td>
                             <td>{yieldPercent.toFixed(1)} %</td>
+                            <td>{yieldOnCost.toFixed(1)} %</td>
                         </tr>
                     )
                 })}

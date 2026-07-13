@@ -27,6 +27,7 @@ export interface HoldingPosition {
   name: string;
   shares: number;
   current_value: number;
+  purchase_value: number;
   dividend_net: number;
 }
 

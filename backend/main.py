@@ -326,6 +326,7 @@ def get_holdings():
                 "name": holding["asset"]["name"],
                 "shares": holding["position"]["shares"],
                 "current_value": holding["position"]["currentValue"],
+                "purchase_value": holding["position"]["purchaseValue"],
                 "dividend_net": dividend_net,
             }
 
