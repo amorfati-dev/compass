@@ -5,6 +5,7 @@ import ThesisCard from './ThesisCard';
 import AddForm from './AddForm';
 import type { HoldingsResponse, Thesis, DbPosition, Status } from './types';
 import PositionsList from './PositionsList';
+import DividendPie from './DividendPie';
 const FIRE_TARGET_MONTHLY = 3500;
 
   const emptyForm = {
@@ -147,6 +148,7 @@ function App() {
       ) : (
         <>
           <FireBar monthlyDividends={monthlyDividends} target={FIRE_TARGET_MONTHLY} />
+          <DividendPie positions={holdings.positions} />
           <PositionsList positions={holdings.positions} />
         </>
       )}

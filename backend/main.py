@@ -278,6 +278,7 @@ def get_holdings_raw():
     if response.status_code >= 400:
         raise fastapi.HTTPException(status_code=response.status_code, detail=response.text)
     data = response.json()
+    data.pop("charts", None)
     return data
 
 @app.get("/holdings")
@@ -298,6 +299,7 @@ def get_holdings():
         # Parqets Fehlermeldung durchreichen statt sie zu verschlucken
         raise fastapi.HTTPException(status_code=response.status_code, detail=response.text)
     data = response.json()
+    data.pop("charts", None)
 
     # --- Aggregation über ISIN: ein Dict, ISIN als Schlüssel ---
     aggregated: dict[str, dict] = {}
@@ -320,6 +322,7 @@ def get_holdings():
             aggregated[isin]["shares"] += holding["position"]["shares"]
             aggregated[isin]["current_value"] += holding["position"]["currentValue"]
             aggregated[isin]["dividend_net"] += dividend_net
+            aggregated[isin]["purchase_value"] += holding["position"]["purchaseValue"]
         else:
             aggregated[isin] = {
                 "isin": isin,

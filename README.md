@@ -1,135 +1,88 @@
-# Compass
+# Compass 1.0
 
-A personal **dividend-growth-investing (DGI)** tracker built around a **FIRE** goal.
-Compass connects *why* you'd hold a stock (a **thesis**) to *what* you actually hold
-(**positions**), and visualizes your live progress toward a monthly passive-income target.
-
----
-
-## Features
-
-- **Thesis management** — capture the investment case for each candidate ticker,
-  including a `kill_criterion` and a review `status`.
-- **Position tracking** — record actual holdings (broker, shares, entry price,
-  expected dividend per share).
-- **FIRE Bar** — a live progress bar toward a target monthly net dividend income,
-  summed across all positions. The target is currently a single example value
-  (**3.500 €/month**); see [Roadmap](#roadmap) for the planned multi-tier model.
-- **Asset classification** — every entry is tagged with a `type`
-  (aristocrat, king, turnaround, ETF, cash, fonds, bonds, commodities, other).
-
-> **Note on CRUD:** Theses currently support create, read, status update (PATCH)
-> and delete. Positions support create and read only — update/delete are on the roadmap.
+A personal **dividend-growth-investing (DGI)** cockpit built around a **FIRE** goal.
+Compass pulls real portfolio data from **Parqet** (OAuth2 + PKCE), computes trailing
+net dividend income, and visualizes live progress toward a monthly passive-income target.
 
 ---
 
-## Data model
+## What 1.0 does
 
-Compass deliberately keeps **two independent models**:
+- **Live Parqet connection** — the backend authenticates once via OAuth2/PKCE
+  (`/auth/parqet/login`), stores the token in SQLite, and **auto-refreshes it**
+  when it expires (proven in practice: expired tokens are renewed silently via
+  the refresh token, no re-login needed).
+- **`GET /holdings`** — fetches all four portfolios from Parqet's performance API,
+  filters out sold and cash positions, corrects dividend net values (uses `gainNet`
+  where taxes are known, otherwise `gainGross × (1 − 0.26375)` German capital gains
+  tax), and aggregates duplicate ISINs across brokers into one position.
+- **FIRE Bar** — progress toward the target of **3.500 € net dividends/month**
+  (trailing twelve months ÷ 12), currently ~34 %.
+- **KPI tiles** — trailing net dividends per year and per month.
+- **Positions table** — all ~90 aggregated positions sorted by dividend contribution,
+  with current value, net dividend, **yield** (dividend ÷ current value) and
+  **yield on cost** (dividend ÷ purchase value).
+- **Dividend donut** — one slice per position with > 100 € net dividends/year,
+  everything smaller summed into an "Sonstige" slice; details on hover.
+- **Thesis management** — capture the investment case per ticker including a
+  `kill_criterion` and review `status` (create, read, status update, delete).
 
-| Model      | Purpose                                      |
-| ---------- | -------------------------------------------- |
-| `Thesis`   | The investment case for a ticker (the *why*) |
-| `Position` | An actual holding (the *what*)               |
+## What 1.0 deliberately does *not* do
 
-**Key design decisions**
+Kept out of scope for this release — see the phase plan for when they land:
 
-- The two models are **not linked by a foreign key**. They are joined in the
-  **frontend** by the `ticker` string (relationship is *1 Thesis : n Positions*).
-- `expected_dividend_per_share` stores the **per-share** value. The FIRE Bar
-  multiplies it by the share count to compute each position's contribution.
-- The SQLite DB (`compass.db`) is **gitignored** — it never lives in the repo.
+- **Forward yields** — all dividend numbers are trailing (last 12 months),
+  not projected forward.
+- **Simulation** — no "what if I invest X €/month" projections yet.
+- **Allocator** — no suggestions where fresh money should go.
+- **Deployment** — runs locally only; the Hetzner VPS deployment is a later phase.
 
-### Fields
+## How to run it
 
-**Thesis** — `ticker`, `name`, `type`, `thesis`, `kill_criterion`, `status`, `created_at`
-**Position** — `broker`, `ticker`, `type`, `name`, `number_of_shares`, `entry_price`, `expected_dividend_per_share`, `created_at`
+Two terminals.
 
-### Enums
+**Terminal 1 — backend** (FastAPI on `http://localhost:8000`, docs at `/docs`):
 
-- **type**: `aristocrat`, `king`, `turnaround`, `etf`, `cash`, `fonds`, `bonds`, `commodities`, `other`
-- **status**: `unreviewed`, `thesis_valid`, `watchout`, `thesis_broken`
+```bash
+cd backend
+source .venv/bin/activate   # first time: python -m venv .venv && pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+**Terminal 2 — frontend** (Vite dev server on `http://localhost:5173`):
+
+```bash
+cd frontend
+npm run dev                 # first time: npm install first
+```
+
+**First run only:** open `http://localhost:8000/auth/parqet/login` once in the
+browser and approve access — this stores the Parqet token in the local SQLite DB
+(`compass.db`, gitignored). After that the token refreshes itself.
 
 ---
 
 ## Tech stack
 
-- **Backend:** Python · FastAPI · SQLModel · SQLite
+- **Backend:** Python · FastAPI · SQLModel · SQLite · httpx
 - **Frontend:** React 19 · TypeScript · Vite · Recharts
-- **Deployment:** runs on a Hetzner VPS
-
----
-
-## Getting started
-
-### Backend
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
-
-The API runs on `http://localhost:8000` (interactive docs at `/docs`).
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The dev server runs on `http://localhost:5173` (the backend's CORS config
-already allows this origin).
-
----
 
 ## API reference
 
-| Method   | Endpoint       | Description            |
-| -------- | -------------- | ---------------------- |
-| `GET`    | `/`            | Health check           |
-| `POST`   | `/theses`      | Create a thesis        |
-| `GET`    | `/theses`      | List all theses        |
-| `GET`    | `/theses/{id}` | Get a single thesis    |
-| `PATCH`  | `/theses/{id}` | Update a thesis status |
-| `DELETE` | `/theses/{id}` | Delete a thesis        |
-| `POST`   | `/positions`   | Create a position      |
-| `GET`    | `/positions`   | List all positions     |
-
----
-
-## Goals
-
-Compass is a personal tool to make the path to **FIRE** tangible: by tying every
-holding back to an explicit thesis (and an explicit kill criterion), it keeps the
-portfolio honest, while the FIRE Bar turns an abstract goal into a number that
-moves as the portfolio grows.
-
-The current **3.500 €/month** target is only a hardcoded example. The longer-term
-vision is a flexible **FIRE line** model so the bar can reflect different
-strategies and personal numbers:
-
-- **Lean FIRE** — cover only essential expenses.
-- **Coast FIRE** — enough invested that growth alone reaches the goal by a target age.
-- **Barista FIRE** — partial coverage, topped up by part-time income.
-- **Fat FIRE** — a comfortable, no-compromises target.
-- **Individual FIRE line** — a fully custom per-user monthly target.
-
----
-
-## Roadmap
-
-- [ ] Form reset after submit
-- [ ] Unified card display (filter by ticker)
-- [ ] Component refactor (`AddForm` / `ThesisCard` / `FireBar`)
-- [ ] Full CRUD for positions (update + delete)
-- [ ] Unified delete across both models
-- [ ] Configurable FIRE line (Lean / Coast / Barista / Fat / custom per user)
-- [ ] Enter real positions
+| Method   | Endpoint               | Description                                  |
+| -------- | ---------------------- | -------------------------------------------- |
+| `GET`    | `/`                    | Health check                                 |
+| `GET`    | `/holdings`            | Aggregated live holdings + monthly dividend  |
+| `GET`    | `/auth/parqet/login`   | Start OAuth2/PKCE flow (one-time)            |
+| `GET`    | `/auth/parqet/callback`| OAuth2 callback, stores token                |
+| `POST`   | `/theses`              | Create a thesis                              |
+| `GET`    | `/theses`              | List all theses                              |
+| `GET`    | `/theses/{id}`         | Get a single thesis                          |
+| `PATCH`  | `/theses/{id}`         | Update a thesis status                       |
+| `DELETE` | `/theses/{id}`         | Delete a thesis                              |
+| `POST`   | `/positions`           | Create a manual position                     |
+| `GET`    | `/positions`           | List manual positions                        |
+| `DELETE` | `/positions/{ticker}`  | Delete manual positions by ticker            |
 
 ---
 
